@@ -120,7 +120,7 @@ export const login = async (
     });
 
   } catch (error) {
-
+    console.error("Login Error:", error);
     return res
       .status(401)
       .json({
