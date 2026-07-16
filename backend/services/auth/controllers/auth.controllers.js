@@ -120,7 +120,10 @@ export const login = async (
     });
 
   } catch (error) {
-    console.error("Login Error:", error);
+    console.error("=== LOGIN FAILED ===");
+    console.error(error);
+    console.error(error?.message);
+    console.error(error?.stack);
     return res
       .status(401)
       .json({
@@ -169,6 +172,10 @@ export const logout =
       });
 
     } catch (error) {
+      console.error("=== LOGIN FAILED ===");
+      console.error(error);
+      console.error(error?.message);
+      console.error(error?.stack);
 
       return res.status(500).json({
 
@@ -276,6 +283,10 @@ export const updatePlan = async (req, res) => {
   }
 
   catch (error) {
+    console.error("=== LOGIN FAILED ===");
+    console.error(error);
+    console.error(error?.message);
+    console.error(error?.stack);
 
     console.log(error);
 
@@ -404,6 +415,10 @@ export const deductCredits = async (req, res) => {
     }
 
     catch(error){
+        console.error("=== LOGIN FAILED ===");
+        console.error(error);
+        console.error(error?.message);
+        console.error(error?.stack);
 
         console.log(error);
           console.log(error)
