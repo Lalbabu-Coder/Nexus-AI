@@ -56,16 +56,16 @@ export const login = async (
     const sessionId =
       crypto.randomUUID();
 
-    console.log("Saving user-session to Redis...");
+    console.log("Redis SET start");
     await redis.set(
       `user-session:${user._id}`,
       sessionId,
       "EX",
       60 * 60 * 24 * 7
     );
-    console.log("user-session saved successfully");
+    console.log("Redis SET success");
 
-    console.log("Saving session to Redis...");
+    console.log("Redis SET start");
     await redis.set(
 
       `session:${sessionId}`,
@@ -91,7 +91,7 @@ export const login = async (
 
       60 * 60 * 24 * 7
     );
-    console.log("session saved successfully");
+    console.log("Redis SET success");
 
     const isProduction = process.env.NODE_ENV === "production";
     res.cookie(
