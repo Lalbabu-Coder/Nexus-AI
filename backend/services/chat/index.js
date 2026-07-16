@@ -11,6 +11,18 @@ const port=process.env.PORT
 
 app.use("/",router)
 
+app.use((err, req, res, next) => {
+  console.error("=== GLOBAL CHAT ERROR ===");
+  console.error(err);
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+    stack: err.stack,
+    code: err.code
+  });
+});
+
 
 app.listen(port, () => {
     connectDB()

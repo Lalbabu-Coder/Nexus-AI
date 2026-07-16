@@ -1,150 +1,169 @@
 import Conversation
 from "../models/conversation.model.js";
+import Message
+from "../models/message.model.js";
 
 export const createConversation =async(req,res)=>{
 
- try{
- const userId =req.headers["x-user-id"];
- console.log("userId",userId)
-  const conversation =await Conversation.create({
-   userId:userId
-  });
+  try{
+    console.log("Reached createConversation");
+    console.log("Authenticated user:", req.user);
+    console.log("Request body:", req.body);
 
-  res.json(
-   conversation
-  );
+    const userId =req.headers["x-user-id"];
+    console.log("userId",userId)
 
- }catch(error){
+    console.log("Before Conversation.create()");
+    const conversation =await Conversation.create({
+     userId:userId
+    });
+    console.log("After Conversation.create()");
 
-  res.status(500).json({
-   message:error.message
-  });
+    console.log("Before response");
+    res.json(
+     conversation
+    );
 
- }
+  }catch(err){
+    console.error("=== CHAT ERROR ===");
+    console.error(err);
+    console.error(err.stack);
+    res.status(500).json({
+      message: err.message,
+      stack: err.stack,
+      code: err.code
+    });
+  }
 
 }
 
 
 export const getConversations =async(req,res)=>{
 
- try{
- const userId =req.headers["x-user-id"];
-  const conversations =await Conversation.find({
+  try{
+    const userId =req.headers["x-user-id"];
+    const conversations =await Conversation.find({
 
-   userId:userId
+     userId:userId
 
-  })
-  .sort({
-   updatedAt:-1
-  });
+    })
+    .sort({
+     updatedAt:-1
+    });
 
-  res.json(
-   conversations
-  );
+    res.json(
+     conversations
+    );
 
- }catch(error){
-
-  res.status(500).json({
-   message:error.message
-  });
-
- }
+  }catch(err){
+    console.error("=== CHAT ERROR ===");
+    console.error(err);
+    console.error(err.stack);
+    res.status(500).json({
+      message: err.message,
+      stack: err.stack,
+      code: err.code
+    });
+  }
 
 }
-
-import Message
-from "../models/message.model.js";
 
 export const saveMessage =async(req,res)=>{
 
- try{
+  try{
 
-  const {
-   conversationId,
-   role,
-   content,
-   images,
-  artifacts
-  } = req.body;
+    const {
+     conversationId,
+     role,
+     content,
+     images,
+    artifacts
+    } = req.body;
 
-  const message =await Message.create({
+    const message =await Message.create({
 
-   conversationId,
+     conversationId,
 
-   role,
-  images,
-   content,
-   artifacts:
-  artifacts || []
+     role,
+    images,
+     content,
+     artifacts:
+    artifacts || []
 
-  });
+    });
 
-  res.json(
-   message
-  );
+    res.json(
+     message
+    );
 
- }catch(error){
-
-  res.status(500).json({
-   message:error.message
-  });
-
- }
+  }catch(err){
+    console.error("=== CHAT ERROR ===");
+    console.error(err);
+    console.error(err.stack);
+    res.status(500).json({
+      message: err.message,
+      stack: err.stack,
+      code: err.code
+    });
+  }
 
 }
-
-
 
 export const getMessages =async(req,res)=>{
 
- try{
+  try{
 
-  const messages =await Message.find({
+    const messages =await Message.find({
 
-   conversationId:
-   req.params.id
+     conversationId:
+     req.params.id
 
-  })
-  .sort({
-   createdAt:1
-  });
+    })
+    .sort({
+     createdAt:1
+    });
 
-  res.json(
-   messages
-  );
+    res.json(
+     messages
+    );
 
- }catch(error){
-
-  res.status(500).json({
-   message:error.message
-  });
-
- }
+  }catch(err){
+    console.error("=== CHAT ERROR ===");
+    console.error(err);
+    console.error(err.stack);
+    res.status(500).json({
+      message: err.message,
+      stack: err.stack,
+      code: err.code
+    });
+  }
 
 }
 
-
 export const updateConversation=async (req,res)=>{
-try {
+  try {
     const {conversationId,title}=req.body
     const conversation=await Conversation.findByIdAndUpdate( conversationId,{
         title
     })
-     res.json(
-   conversation
-  );
+    res.json(
+      conversation
+    );
 
- }catch(error){
-
-  res.status(500).json({
-   message:error.message
-  });
-
-}
+  }catch(err){
+    console.error("=== CHAT ERROR ===");
+    console.error(err);
+    console.error(err.stack);
+    res.status(500).json({
+      message: err.message,
+      stack: err.stack,
+      code: err.code
+    });
+  }
 }
 
 export const deleteConversation=async (req,res)=>{
-try {
+  try {
     const {conversationId}=req.body
     await Message.deleteMany({ conversationId });
     await Conversation.findByIdAndDelete(conversationId);
@@ -152,9 +171,14 @@ try {
         success: true,
         message: "Conversation deleted successfully"
     });
- }catch(error){
-  res.status(500).json({
-   message:error.message
-  });
-}
+  }catch(err){
+    console.error("=== CHAT ERROR ===");
+    console.error(err);
+    console.error(err.stack);
+    res.status(500).json({
+      message: err.message,
+      stack: err.stack,
+      code: err.code
+    });
+  }
 }
