@@ -101,7 +101,7 @@ export const login = async (
     console.log("Redis SET success");
     console.log("9. After redis.set()");
 
-    const isProduction = process.env.NODE_ENV === "production";
+    const isProduction = process.env.NODE_ENV === "production" || (process.env.REDIS_URL && !process.env.REDIS_URL.includes("localhost"));
     console.log("10. Before res.cookie()");
     res.cookie(
 
@@ -172,7 +172,7 @@ export const logout =
 
       }
 
-      const isProduction = process.env.NODE_ENV === "production";
+      const isProduction = process.env.NODE_ENV === "production" || (process.env.REDIS_URL && !process.env.REDIS_URL.includes("localhost"));
       res.clearCookie(
         "session",
         {
