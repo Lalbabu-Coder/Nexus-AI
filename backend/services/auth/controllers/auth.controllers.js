@@ -89,6 +89,7 @@ export const login = async (
       60 * 60 * 24 * 7
     );
 
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie(
 
       "session",
@@ -98,9 +99,9 @@ export const login = async (
       {
         httpOnly: true,
 
-        secure: false,
+        secure: isProduction,
 
-        sameSite: "lax",
+        sameSite: isProduction ? "none" : "lax",
 
         maxAge:
           1000 *
@@ -149,12 +150,13 @@ export const logout =
 
       }
 
+      const isProduction = process.env.NODE_ENV === "production";
       res.clearCookie(
         "session",
         {
           httpOnly: true,
-          secure: false,
-          sameSite: "lax"
+          secure: isProduction,
+          sameSite: isProduction ? "none" : "lax"
         }
       );
 
