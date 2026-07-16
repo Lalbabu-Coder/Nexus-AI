@@ -13,14 +13,19 @@ export const login = async (
 ) => {
 
   try {
-
+    console.log("1. Login request received.");
+    console.log("2. req.body keys:", Object.keys(req.body || {}));
+    console.log("3. token exists?:", !!req.body?.token);
 
     const { token } = req.body;
 
+    console.log("4. Before verifyIdToken()");
     const decoded =
       await getAuth(app)
         .verifyIdToken(token);
+    console.log("5. After verifyIdToken()");
 
+    console.log("6. Firebase UID:", decoded?.uid);
     console.log(decoded);
 
 
@@ -53,9 +58,11 @@ export const login = async (
         });
     }
 
+    console.log("7. Before creating JWT/session.");
     const sessionId =
       crypto.randomUUID();
 
+    console.log("8. Before redis.set()");
     console.log("Redis SET start");
     await redis.set(
       `user-session:${user._id}`,
@@ -92,8 +99,10 @@ export const login = async (
       60 * 60 * 24 * 7
     );
     console.log("Redis SET success");
+    console.log("9. After redis.set()");
 
     const isProduction = process.env.NODE_ENV === "production";
+    console.log("10. Before res.cookie()");
     res.cookie(
 
       "session",
@@ -116,6 +125,7 @@ export const login = async (
       }
     );
 
+    console.log("11. Before res.json()");
     return res.json({
 
       success: true,
