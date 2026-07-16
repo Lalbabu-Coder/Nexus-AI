@@ -5,16 +5,18 @@ dotenv.config();
 
 const url = process.env.REDIS_URL;
 
-if (!url) {
+console.log("process.env.REDIS_URL exists?:", !!url);
+
+if (url) {
+  const isSecure = url.startsWith("rediss://");
+  const isPlain = url.startsWith("redis://");
+  console.log("Protocol:", isSecure ? "rediss://" : (isPlain ? "redis://" : "unknown protocol"));
+  console.log("Does the URL contain \"upstash.io\"?:", url.includes("upstash.io"));
+} else {
+  console.log("Protocol: N/A");
+  console.log("Does the URL contain \"upstash.io\"?: false");
   throw new Error("CRITICAL ERROR: process.env.REDIS_URL is undefined or empty!");
 }
-
-// Print the first 25 characters and mask the rest
-const maskedUrl = url.substring(0, 25) + "...(masked)";
-console.log("Loaded REDIS_URL from process.env:", maskedUrl);
-
-const isSecure = url.startsWith("rediss://");
-console.log("Redis URL protocol starts with:", isSecure ? "rediss://" : (url.startsWith("redis://") ? "redis://" : "unknown protocol"));
 
 const redisOptions = {
   maxRetriesPerRequest: null,
@@ -26,7 +28,7 @@ const redisOptions = {
   }
 };
 
-// Force TLS configuration if the URL uses rediss:// or is an Upstash connection
+const isSecure = url.startsWith("rediss://");
 if (isSecure || url.includes("upstash")) {
   console.log("Log: Configuring TLS options for secure connection...");
   redisOptions.tls = {
@@ -34,6 +36,7 @@ if (isSecure || url.includes("upstash")) {
   };
 }
 
+console.log("Redis options actually passed to new Redis():", redisOptions);
 console.log("Log: About to create new Redis() instance...");
 const redis = new Redis(url, redisOptions);
 
