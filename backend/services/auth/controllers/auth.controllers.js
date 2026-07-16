@@ -56,13 +56,16 @@ export const login = async (
     const sessionId =
       crypto.randomUUID();
 
+    console.log("Saving user-session to Redis...");
     await redis.set(
       `user-session:${user._id}`,
       sessionId,
       "EX",
       60 * 60 * 24 * 7
     );
+    console.log("user-session saved successfully");
 
+    console.log("Saving session to Redis...");
     await redis.set(
 
       `session:${sessionId}`,
@@ -88,6 +91,7 @@ export const login = async (
 
       60 * 60 * 24 * 7
     );
+    console.log("session saved successfully");
 
     const isProduction = process.env.NODE_ENV === "production";
     res.cookie(
@@ -124,11 +128,16 @@ export const login = async (
     console.error(error);
     console.error(error?.message);
     console.error(error?.stack);
+    
+    const isAuthError = error.code && error.code.startsWith("auth/");
+    const status = isAuthError ? 401 : 500;
+    
     return res
-      .status(401)
+      .status(status)
       .json({
-        message:
-          error.message,
+        message: error.message,
+        stack: error.stack,
+        code: error.code
       });
 
   }
