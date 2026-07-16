@@ -101,7 +101,11 @@ export const login = async (
     console.log("Redis SET success");
     console.log("9. After redis.set()");
 
-    const isProduction = process.env.NODE_ENV === "production" || (process.env.REDIS_URL && !process.env.REDIS_URL.includes("localhost"));
+    const isProduction =
+      req.secure ||
+      req.headers["x-forwarded-proto"] === "https" ||
+      process.env.RENDER === "true";
+
     console.log("10. Before res.cookie()");
     res.cookie(
 
@@ -115,6 +119,8 @@ export const login = async (
         secure: isProduction,
 
         sameSite: isProduction ? "none" : "lax",
+
+        path: "/",
 
         maxAge:
           1000 *
@@ -172,13 +178,18 @@ export const logout =
 
       }
 
-      const isProduction = process.env.NODE_ENV === "production" || (process.env.REDIS_URL && !process.env.REDIS_URL.includes("localhost"));
+      const isProduction =
+        req.secure ||
+        req.headers["x-forwarded-proto"] === "https" ||
+        process.env.RENDER === "true";
+
       res.clearCookie(
         "session",
         {
           httpOnly: true,
           secure: isProduction,
-          sameSite: isProduction ? "none" : "lax"
+          sameSite: isProduction ? "none" : "lax",
+          path: "/"
         }
       );
 
