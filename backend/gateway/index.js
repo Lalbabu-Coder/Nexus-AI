@@ -50,10 +50,13 @@ app.use("/api/billing",protect,proxyWithUser(process.env.BILLING_SERVICE))
 // wsProxy is replaced by direct WebSocket proxy implementation in the upgrade event handler
 
 
-app.get("/", (req, res) => {
+app.get(["/", "/health", "/api/health"], (req, res) => {
+  console.log(`[Gateway] Health check endpoint pinged at ${new Date().toISOString()}`);
   res.status(200).json({
     service: "gateway",
-    status: "ok"
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
   });
 });
 
