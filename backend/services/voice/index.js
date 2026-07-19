@@ -108,7 +108,20 @@ wss.on("connection", (ws, request) => {
 
       // 2. Query the cognitive LangGraph agents (which handles chat logging & credit deductions)
       console.log(`[Voice] Dispatching query prompt to agent: ${selectedAgent}`);
-      const agentRes = await axios.post(`${process.env.AGENT_SERVICE}/chat`, {
+      
+      let agentServiceBase = process.env.AGENT_SERVICE;
+      console.log(`[Voice URL Verification] Raw process.env.AGENT_SERVICE: "${agentServiceBase}"`);
+      
+      if (agentServiceBase) {
+        agentServiceBase = agentServiceBase.trim().replace(/^['"]|['"]$/g, "");
+      }
+      if (!agentServiceBase) {
+        agentServiceBase = "http://localhost:8003";
+      }
+      const agentServiceUrl = `${agentServiceBase}/chat`;
+      console.log(`[Voice URL Verification] Resolved request URL: "${agentServiceUrl}"`);
+      
+      const agentRes = await axios.post(agentServiceUrl, {
         prompt: transcription,
         conversationId,
         agent: selectedAgent
