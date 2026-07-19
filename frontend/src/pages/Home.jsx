@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FaGoogle } from "react-icons/fa";
 import ArtifactPanel from "../components/ArtifactPanel";
@@ -5,26 +6,50 @@ import ChatArea from "../components/ChatArea";
 import Sidebar from "../components/Sidebar";
 import api from "../utils/axios";
 import { setUserData } from "../redux/user.slice";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { auth, googleProvider } from "../../firebase";
 
 function Home() {
   const { userData } = useSelector(state => state.user);
-  const dispatch=useDispatch()
-const login=async (token)=>{
-  try {
-    const {data}=await api.post(`/api/auth/login`,{token})
-    dispatch(setUserData(data.user))
-  } catch (error) {
-    console.log(error)
-  }
-}
-  const handleGoogleLogin =async () => {
-     const result =
-     await signInWithPopup(auth,googleProvider);
-    
-     const token =await result.user.getIdToken();
-     await login(token)
+  const dispatch = useDispatch();
+
+  const login = async (token) => {
+    try {
+      const { data } = await api.post(`/api/auth/login`, { token });
+      dispatch(setUserData(data.user));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          const token = await result.user.getIdToken();
+          await login(token);
+        }
+      } catch (error) {
+        console.error("Error getting redirect result:", error);
+      }
+    };
+    handleRedirectResult();
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const token = await result.user.getIdToken();
+      await login(token);
+    } catch (error) {
+      console.error("Google popup login failed, trying redirect:", error);
+      try {
+        await signInWithRedirect(auth, googleProvider);
+      } catch (redirectError) {
+        console.error("Google redirect login failed:", redirectError);
+      }
+    }
   };
 
   return (

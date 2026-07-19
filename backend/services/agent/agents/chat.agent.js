@@ -62,6 +62,7 @@ If searchContext exists:
 
 Rules:
 
+- Respond in the same language that the user is using (e.g., if the user asks in Hindi or Hinglish, reply in Hindi/Hinglish; if they ask in English, reply in English).
 - For simple questions, greetings, and short queries, respond naturally in plain text.
 - For technical, educational, coding, or detailed topics, use clean Markdown.
 

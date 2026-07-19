@@ -1,14 +1,15 @@
 import express from "express";
+import http from "http";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import redis from "../shared/redis/redis.js";
 import dotenv from "dotenv";
 import proxy from "express-http-proxy";
 import { proxyWithUser } from "./utils/proxyWithHeaders.js";
 import { protect } from "./middlewares/auth.middleware.js";
 import { getCurrentUser } from "./controllers/user.controller.js";
 import cookieParser from "cookie-parser"
+import { createProxyMiddleware } from "http-proxy-middleware";
 dotenv.config();
 const app = express();
 app.set("trust proxy", 1);
@@ -28,7 +29,11 @@ app.use(
   "/uploads",
   express.static("uploads")
 );
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  })
+);
 app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(express.json());
@@ -37,6 +42,18 @@ app.use("/api/me",protect,getCurrentUser)
 app.use("/api/chat",protect,proxyWithUser(process.env.CHAT_SERVICE))
 app.use("/api/agent",protect,proxyWithUser(process.env.AGENT_SERVICE))
 app.use("/api/billing",protect,proxyWithUser(process.env.BILLING_SERVICE))
+const wsProxy = createProxyMiddleware({
+  target: process.env.VOICE_SERVICE || "http://localhost:8005",
+  changeOrigin: true,
+  ws: true,
+  logger: console
+});
+
+app.use(
+  "/api/voice",
+  protect,
+  wsProxy
+);
 
 
 app.get("/", (req, res) => {
@@ -47,8 +64,46 @@ app.get("/", (req, res) => {
 });
 
 
-app.listen(port, () => {
+const server = http.createServer(app);
+server.listen(port, () => {
   console.log(
     `Gateway running on ${port}`
   );
+});
+
+// Gracefully close server and release socket port on exit signals
+const handleShutdown = () => {
+  console.log("[Gateway] Shutdown signal received. Closing port 8000...");
+  server.close(() => {
+    process.exit(0);
+  });
+  // Force release after 100ms if connections remain active
+  setTimeout(() => {
+    process.exit(0);
+  }, 100);
+};
+
+process.on("SIGINT", handleShutdown);
+process.on("SIGTERM", handleShutdown);
+process.on("SIGUSR2", handleShutdown);
+
+server.on("upgrade", (req, socket, head) => {
+  console.log("=== GATEWAY WEBSOCKET UPGRADE REQUEST ===");
+  console.log("URL:", req.url);
+  console.log("Cookies:", req.headers.cookie);
+  try {
+    wsProxy.upgrade(req, socket, head);
+  } catch (err) {
+    console.error("=== GATEWAY UPGRADE FORWARDING ERROR ===");
+    console.error(err);
+    socket.destroy();
+  }
+});
+
+process.on("beforeExit", (code) => {
+  console.log(`[DEBUG] Gateway beforeExit fired with code: ${code}`);
+});
+
+process.on("exit", (code) => {
+  console.log(`[DEBUG] Gateway exit fired with code: ${code}`);
 });
