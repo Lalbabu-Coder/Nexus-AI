@@ -43,7 +43,7 @@ app.use("/api/chat",protect,proxyWithUser(process.env.CHAT_SERVICE))
 app.use("/api/agent",protect,proxyWithUser(process.env.AGENT_SERVICE))
 app.use("/api/billing",protect,proxyWithUser(process.env.BILLING_SERVICE))
 const wsProxy = createProxyMiddleware({
-  target: process.env.VOICE_SERVICE || "http://localhost:8005",
+  target: process.env.VOICE_SERVICE || process.env.VOICE_SERVICE_URL || "http://localhost:8005",
   changeOrigin: true,
   ws: true,
   logger: console
