@@ -11,6 +11,10 @@ import { getCurrentUser } from "./controllers/user.controller.js";
 import cookieParser from "cookie-parser"
 import { createProxyMiddleware } from "http-proxy-middleware";
 dotenv.config();
+console.log("=== GATEWAY STARTUP ENVIRONMENT VARIABLES ===");
+console.log("process.env.VOICE_SERVICE:", process.env.VOICE_SERVICE);
+console.log("process.env.VOICE_SERVICE_URL:", process.env.VOICE_SERVICE_URL);
+console.log("=============================================");
 const app = express();
 app.set("trust proxy", 1);
 const port=process.env.PORT || 5000
@@ -43,7 +47,15 @@ app.use("/api/chat",protect,proxyWithUser(process.env.CHAT_SERVICE))
 app.use("/api/agent",protect,proxyWithUser(process.env.AGENT_SERVICE))
 app.use("/api/billing",protect,proxyWithUser(process.env.BILLING_SERVICE))
 const wsProxy = createProxyMiddleware({
-  target: process.env.VOICE_SERVICE || process.env.VOICE_SERVICE_URL || "http://localhost:8005",
+  target: "http://placeholder.local",
+  router: (req) => {
+    let resolvedTarget = process.env.VOICE_SERVICE || process.env.VOICE_SERVICE_URL || "http://localhost:8005";
+    if (resolvedTarget === "undefined" || resolvedTarget === "null" || !resolvedTarget) {
+      resolvedTarget = "http://localhost:8005";
+    }
+    console.log(`[wsProxy] Dynamic router resolved target to: "${resolvedTarget}" (VOICE_SERVICE: "${process.env.VOICE_SERVICE}", VOICE_SERVICE_URL: "${process.env.VOICE_SERVICE_URL}")`);
+    return resolvedTarget;
+  },
   changeOrigin: true,
   ws: true,
   logger: console
