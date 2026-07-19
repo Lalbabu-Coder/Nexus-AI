@@ -240,15 +240,6 @@ search:"Search the web..."
       socketRef.current = null;
     }
     setIsListening(false);
-
-    // Cancel speech synthesis and active audio playback
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-    if (activeAudioRef.current) {
-      activeAudioRef.current.pause();
-      activeAudioRef.current = null;
-    }
   };
 
   useEffect(() => {
