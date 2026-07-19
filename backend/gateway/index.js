@@ -104,7 +104,12 @@ server.on("upgrade", (req, socket, head) => {
   console.log("URL:", req.url);
   console.log("Cookies:", req.headers.cookie);
   try {
-    wsProxy.upgrade(req, socket, head);
+    let resolvedTarget = process.env.VOICE_SERVICE || process.env.VOICE_SERVICE_URL || "http://localhost:8005";
+    if (resolvedTarget === "undefined" || resolvedTarget === "null" || !resolvedTarget) {
+      resolvedTarget = "http://localhost:8005";
+    }
+    console.log(`[Gateway Upgrade] Proxying upgrade to target: "${resolvedTarget}"`);
+    wsProxy.upgrade(req, socket, head, { target: resolvedTarget });
   } catch (err) {
     console.error("=== GATEWAY UPGRADE FORWARDING ERROR ===");
     console.error(err);
