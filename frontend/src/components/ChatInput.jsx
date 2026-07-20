@@ -792,8 +792,34 @@ catch(error){
        </div>
      )}
 
+     {/* Main Input Card Container */}
+     <div className="flex flex-col gap-3 bg-[#090b12]/90 border border-white/[0.08] focus-within:border-indigo-500/40 focus-within:shadow-[0_0_40px_rgba(99,102,241,0.15)] rounded-2xl p-4 transition-all duration-300 shadow-2xl relative">
 
-</div>
+       {/* Agent Pills */}
+       <div className="flex w-full gap-2 pr-2 flex-wrap items-center">
+         {agents.map((agent) => {
+           const Icon = agent.icon;
+           const isActive = selectedAgent === agent.id;
+
+           return (
+             <button
+               key={agent.id}
+               onClick={() => setSelectedAgent(agent.id)}
+               className={`
+                 flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-200 cursor-pointer
+                 ${
+                   isActive
+                     ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-600 text-white border-transparent shadow-[0_0_18px_rgba(99,102,241,0.35)] scale-[1.03]"
+                     : "bg-white/[0.03] text-slate-400 border-white/[0.06] hover:bg-white/[0.07] hover:text-slate-200 hover:border-white/[0.1]"
+                 }
+               `}
+             >
+               <Icon size={13} className={isActive ? "text-white" : "text-slate-500"} />
+               {agent.label}
+             </button>
+           );
+         })}
+       </div>
 
 {
 
