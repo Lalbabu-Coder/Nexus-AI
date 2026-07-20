@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { Send, Paperclip,  Square, Zap, MessageSquare, Code2, Presentation, Image as ImageIcon, Globe, FileText,X } from "lucide-react";
+import { Send, Paperclip, Square, Zap, MessageSquare, Code2, Presentation, Image as ImageIcon, Globe, FileText, X, Mic, MicOff, Sparkles, Loader2, Volume2, User, Radio } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { addMessage, setArtifacts, setIsLoading } from "../redux/message.slice";
 import { sendPrompt } from "../features/agent.api";
-import { Mic, MicOff } from "lucide-react";
 import { useEffect } from "react";
 import { createConversation, updateConversations } from "../features/conversation.api";
 import { addConversation, setConvTitle, setSelectedConversation } from "../redux/conversation.slice";
 import { useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-const speakText = (text) => {
+const speakText = (text, onEnd) => {
   if (typeof window !== "undefined" && "speechSynthesis" in window) {
     window.speechSynthesis.cancel();
     
@@ -26,7 +27,10 @@ const speakText = (text) => {
       .replace(/\s+/g, " ") // compress multiple spaces
       .trim();
 
-    if (!cleanText) return;
+    if (!cleanText) {
+      if (onEnd) onEnd();
+      return;
+    }
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     const voices = window.speechSynthesis.getVoices();
@@ -86,6 +90,7 @@ const speakText = (text) => {
     };
     utterance.onend = () => {
       console.log("[Voice Client] Speech finished speaking");
+      if (onEnd) onEnd();
     };
     utterance.onerror = (e) => {
       console.error("[Voice Client] Speech error occurred:", e.error, e);
@@ -104,13 +109,21 @@ const speakText = (text) => {
         fallbackUtterance.voice = null; // System default voice (guaranteed to be local & offline)
         
         fallbackUtterance.onstart = () => console.log("[Voice Client] Fallback local speech started");
-        fallbackUtterance.onend = () => console.log("[Voice Client] Fallback local speech finished");
-        fallbackUtterance.onerror = (err) => console.error("[Voice Client] Fallback local speech failed:", err.error);
+        fallbackUtterance.onend = () => {
+          console.log("[Voice Client] Fallback local speech finished");
+          if (onEnd) onEnd();
+        };
+        fallbackUtterance.onerror = (err) => {
+          console.error("[Voice Client] Fallback local speech failed:", err.error);
+          if (onEnd) onEnd();
+        };
         
         if (window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
         }
         window.speechSynthesis.speak(fallbackUtterance);
+      } else {
+        if (onEnd) onEnd();
       }
     };
     
@@ -123,93 +136,48 @@ const speakText = (text) => {
     window.speechSynthesis.speak(utterance);
   } else {
     console.warn("[Voice Client] Web Speech Synthesis not supported in this browser.");
+    if (onEnd) onEnd();
   }
 };
 
 export default function ChatInput({
   setBanner
 }) {
-  const [selectedAgent, setSelectedAgent] =useState("auto");
+  const [selectedAgent, setSelectedAgent] = useState("auto");
   const [value, setValue] = useState("");
-const [isListening, setIsListening] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceState, setVoiceState] = useState("idle"); // "idle" | "connecting" | "listening" | "processing" | "speaking"
+  const [connectionStatus, setConnectionStatus] = useState("disconnected"); // "disconnected" | "connecting" | "connected" | "reconnecting"
+  const [liveTranscript, setLiveTranscript] = useState("");
+  const [aiResponseText, setAiResponseText] = useState("");
 
-const recognitionRef = useRef(null);
+  const recognitionRef = useRef(null);
   const dispatch = useDispatch();
   const { selectedConversation } = useSelector(state => state.conversation);
-   const { isLoading } = useSelector(state => state.message);
-const fileRef = useRef(null);
+  const { isLoading } = useSelector(state => state.message);
+  const fileRef = useRef(null);
 
-const [
+  const [selectedFile, setSelectedFile] = useState(null);
 
-selectedFile,
+  const placeholders = {
+    auto: "Ask NexusAI...",
+    chat: "Chat with NexusAI...",
+    coding: "Describe the software you want...",
+    pdf: "Generate a PDF about...",
+    ppt: "Create a presentation about...",
+    image: "Describe the image...",
+    search: "Search the web..."
+  };
 
-setSelectedFile
-
-]=useState(null);
-
-   const placeholders={
-
-auto:"Ask NexusAI...",
-
-chat:"Chat with NexusAI...",
-
-coding:"Describe the software you want...",
-
-pdf:"Generate a PDF about...",
-
-ppt:"Create a presentation about...",
-
-image:"Describe the image...",
-
-search:"Search the web..."
-
-};
-
-   const agents = [
-
-  {
-    id:"auto",
-    icon:Zap,
-    label:"Auto"
-  },
-
-  {
-    id:"chat",
-    icon:MessageSquare,
-    label:"Chat"
-  },
-
-  {
-    id:"coding",
-    icon:Code2,
-    label:"Coding"
-  },
-
-  {
-    id:"pdf",
-    icon:FileText,
-    label:"PDF"
-  },
-
-  {
-    id:"ppt",
-    icon:Presentation,
-    label:"PPT"
-  },
-
-  {
-    id:"image",
-    icon:ImageIcon,
-    label:"Image"
-  },
-
-  {
-    id:"search",
-    icon:Globe,
-    label:"Search"
-  }
-
-];
+  const agents = [
+    { id: "auto", icon: Zap, label: "Auto" },
+    { id: "chat", icon: MessageSquare, label: "Chat" },
+    { id: "coding", icon: Code2, label: "Coding" },
+    { id: "pdf", icon: FileText, label: "PDF" },
+    { id: "ppt", icon: Presentation, label: "PPT" },
+    { id: "image", icon: ImageIcon, label: "Image" },
+    { id: "search", icon: Globe, label: "Search" }
+  ];
 
   const socketRef = useRef(null);
   const audioCtxRef = useRef(null);
@@ -240,6 +208,8 @@ search:"Search the web..."
       socketRef.current = null;
     }
     setIsListening(false);
+    setVoiceState("idle");
+    setConnectionStatus("disconnected");
   };
 
   useEffect(() => {
@@ -278,6 +248,11 @@ search:"Search the web..."
       return;
     }
 
+    setVoiceState("connecting");
+    setConnectionStatus("connecting");
+    setLiveTranscript("");
+    setAiResponseText("");
+
     try {
       console.log("[Voice Client] Toggling mic... Instantiating AudioContext inside user gesture stack.");
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -312,6 +287,8 @@ search:"Search the web..."
       ws.onopen = () => {
         console.log("[Voice Client] WebSocket connection opened. Sending 'start' control handshake.");
         setIsListening(true);
+        setConnectionStatus("connected");
+        setVoiceState("listening");
         ws.send(
           JSON.stringify({
             type: "start",
@@ -331,6 +308,8 @@ search:"Search the web..."
 
           if (data.type === "ready") {
             console.log("[Voice Client] Handshake confirmed. Hooking up mic stream...");
+            setVoiceState("listening");
+            setConnectionStatus("connected");
             const currentAudioCtx = audioCtxRef.current;
             if (!currentAudioCtx) {
               throw new Error("AudioContext was not initialized!");
@@ -365,13 +344,17 @@ search:"Search the web..."
           } else if (data.type === "processing") {
             console.log("[Voice Client] Server processing VAD silence event. Halting mic recording.");
             stopRecordingLocally();
+            setVoiceState("processing");
             dispatch(setIsLoading(true));
           } else if (data.type === "transcription") {
             console.log("[Voice Client] User speech transcribed:", data.text);
+            setLiveTranscript(data.text);
             dispatch(addMessage({ role: "user", content: data.text }));
           } else if (data.type === "finished") {
             console.log("[Voice Client] Assistant response complete:", data.text);
             dispatch(setIsLoading(false));
+            setVoiceState("speaking");
+            setAiResponseText(data.text);
             dispatch(addMessage({ role: "assistant", content: data.text }));
 
             // Play synthesized response audio
@@ -410,7 +393,8 @@ search:"Search the web..."
                 
                 if (detectedMime === "audio/wav" && audioBlob.size === 16044) {
                   console.log("[Voice Client] Mock audio fallback detected (16044 bytes). Redirecting to Web Speech API.");
-                  speakText(data.text);
+                  setVoiceState("speaking");
+                  speakText(data.text, () => setVoiceState("idle"));
                   return;
                 }
                 
@@ -432,6 +416,7 @@ search:"Search the web..."
                   if (activeAudioRef.current === audio) {
                     activeAudioRef.current = null;
                   }
+                  setVoiceState("idle");
                 };
                 
                 audio.onended = () => {
@@ -440,6 +425,7 @@ search:"Search the web..."
                   if (activeAudioRef.current === audio) {
                     activeAudioRef.current = null;
                   }
+                  setVoiceState("idle");
                 };
                 
                 console.log("[Voice Client] Audio playback started");
@@ -448,6 +434,7 @@ search:"Search the web..."
                 audio.play()
                   .then(() => {
                     console.log("[Voice Client] Audio element play() promise resolved successfully");
+                    setVoiceState("speaking");
                   })
                   .catch((e) => {
                     console.error("[Voice Client] Audio element play() promise rejected:", e);
@@ -455,6 +442,7 @@ search:"Search the web..."
                     if (activeAudioRef.current === audio) {
                       activeAudioRef.current = null;
                     }
+                    setVoiceState("idle");
                   });
               };
               
@@ -462,7 +450,8 @@ search:"Search the web..."
             } else {
               // Fallback to Web Speech API ONLY if no audio was received from the server at all
               console.log("[Voice Client] No audio received from server. Falling back to Web Speech API.");
-              speakText(data.text);
+              setVoiceState("speaking");
+              speakText(data.text, () => setVoiceState("idle"));
             }
 
             // Close session cleanly
@@ -483,11 +472,13 @@ search:"Search the web..."
 
       ws.onerror = (err) => {
         console.error("[Voice Client] WebSocket connection error:", err);
+        setConnectionStatus("disconnected");
         stopVoiceSession();
       };
 
       ws.onclose = () => {
         console.log("[Voice Client] WebSocket connection closed");
+        setConnectionStatus("disconnected");
         stopVoiceSession();
       };
     } catch (err) {
@@ -594,127 +585,212 @@ catch(error){
   };
 
   return (
-   <div className="w-full overflow-hidden px-4 md:px-6 py-5 border-t border-white/[0.04] bg-[#06070a]/80 backdrop-blur-md">
+   <div className="w-full overflow-hidden px-4 md:px-6 py-4 border-t border-white/[0.06] bg-[#040508]/90 backdrop-blur-xl">
      {isListening && (
        <div 
          onClick={stopVoiceSession}
-         className="fixed inset-0 z-[9999] bg-[#090a0f]/98 backdrop-blur-xl flex flex-col items-center justify-between py-16 px-6 select-none cursor-pointer"
+         className="fixed inset-0 z-[9999] bg-[#06070a]/95 backdrop-blur-2xl flex flex-col items-center justify-between py-10 px-4 md:px-8 select-none transition-all duration-300 animate-transcript-fade"
        >
          {/* Top Header */}
-         <div className="w-full max-w-lg flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
-           <div className="flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-[11px] font-semibold text-slate-500 tracking-wider uppercase">NexusAI Voice Mode</span>
+         <div className="w-full max-w-xl flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+           {/* Brand & Connection Badge */}
+           <div className="flex items-center gap-3">
+             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
+               {connectionStatus === "connected" ? (
+                 <>
+                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
+                   <span className="text-[11px] font-semibold text-emerald-400 tracking-wider uppercase">Connected</span>
+                 </>
+               ) : connectionStatus === "connecting" ? (
+                 <>
+                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                   <span className="text-[11px] font-semibold text-amber-400 tracking-wider uppercase">Connecting...</span>
+                 </>
+               ) : (
+                 <>
+                   <span className="w-2 h-2 rounded-full bg-rose-500" />
+                   <span className="text-[11px] font-semibold text-rose-400 tracking-wider uppercase">Disconnected</span>
+                 </>
+               )}
+             </div>
+             <span className="text-xs text-slate-400 font-medium hidden sm:inline-block">NexusAI Voice Mode</span>
            </div>
+
+           {/* Close Button */}
            <button 
              onClick={stopVoiceSession}
-             className="p-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-400 hover:text-white transition-all cursor-pointer"
+             className="p-2.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-slate-300 hover:text-white transition-all cursor-pointer shadow-lg active:scale-95"
+             title="Exit Voice Mode"
            >
-             <X size={16} />
+             <X size={18} />
            </button>
          </div>
 
-         {/* Central ChatGPT-like Glowing Circle/Orb */}
-         <div className="flex flex-col items-center justify-center gap-10 my-auto" onClick={(e) => e.stopPropagation()}>
-           <div className="relative flex items-center justify-center w-60 h-60">
-             {/* Glowing Background Aura */}
-             <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-500/15 via-purple-500/10 to-pink-500/15 blur-3xl animate-pulse" />
-             
-             {/* Pulsing Wave Rings */}
-             <div className="absolute w-44 h-44 rounded-full border border-indigo-500/20 animate-ping opacity-25 [animation-duration:3s]" />
-             <div className="absolute w-36 h-36 rounded-full border border-purple-500/30 animate-ping opacity-45 [animation-duration:2s]" />
-
-             {/* ChatGPT Glowing Orb Core */}
-             <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 p-[1.5px] shadow-[0_0_40px_rgba(99,102,241,0.4)] transition-all duration-300">
-               <div className="w-full h-full rounded-full bg-[#090a0f]/90 backdrop-blur-2xl flex items-center justify-center overflow-hidden">
-                 <div className="flex items-end justify-center gap-1.5 h-10">
-                   <span className="w-1 h-5 bg-gradient-to-t from-indigo-500 to-cyan-400 rounded-full animate-bounce [animation-delay:0.1s] [animation-duration:1s]" />
-                   <span className="w-1 h-8 bg-gradient-to-t from-purple-500 to-pink-400 rounded-full animate-bounce [animation-delay:0.3s] [animation-duration:0.8s]" />
-                   <span className="w-1 h-6 bg-gradient-to-t from-pink-500 to-indigo-400 rounded-full animate-bounce [animation-delay:0.2s] [animation-duration:1.2s]" />
-                   <span className="w-1 h-9 bg-gradient-to-t from-cyan-500 to-purple-400 rounded-full animate-bounce [animation-delay:0.4s] [animation-duration:0.9s]" />
-                   <span className="w-1 h-5 bg-gradient-to-t from-indigo-500 to-pink-400 rounded-full animate-bounce [animation-delay:0.5s] [animation-duration:1.1s]" />
+         {/* Center Section: Live Transcript + Visual Orb + Assistant Response */}
+         <div className="flex flex-col items-center justify-center gap-5 my-auto w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+           
+           {/* Live User Speech Transcript Bubble */}
+           {liveTranscript && (
+             <div className="w-full max-w-md bg-[#0c0e17]/90 border border-indigo-500/25 backdrop-blur-xl rounded-2xl p-4 shadow-[0_10px_30px_rgba(99,102,241,0.12)] animate-transcript-fade transition-all">
+               <div className="flex items-center justify-between mb-2">
+                 <div className="flex items-center gap-2 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
+                   <User size={13} />
+                   <span>You (Live Speech)</span>
                  </div>
+                 <span className="flex items-center gap-1.5 text-[11px] text-indigo-300/80 italic">
+                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+                   Transcribing...
+                 </span>
+               </div>
+               <p className="text-sm md:text-base text-slate-300 font-normal italic leading-relaxed break-words">
+                 "{liveTranscript}"
+               </p>
+             </div>
+           )}
+
+           {/* Central Visual Orb & Mic Core with 4 Visual States */}
+           <div className="relative flex items-center justify-center w-52 h-52 md:w-64 md:h-64 my-2">
+             
+             {/* State 1: CONNECTING / IDLE */}
+             {voiceState === "connecting" && (
+               <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="w-48 h-48 md:w-56 md:h-56 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 blur-2xl animate-pulse" />
+               </div>
+             )}
+
+             {/* State 2: LISTENING (User speaking - expanding wave ripples) */}
+             {voiceState === "listening" && (
+               <>
+                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-600/25 via-purple-600/20 to-pink-500/20 blur-3xl animate-pulse" />
+                 <div className="absolute w-full h-full rounded-full border border-indigo-500/30 animate-voice-ripple-1 pointer-events-none" />
+                 <div className="absolute w-full h-full rounded-full border border-purple-500/30 animate-voice-ripple-2 pointer-events-none" />
+                 <div className="absolute w-full h-full rounded-full border border-indigo-400/20 animate-voice-ripple-3 pointer-events-none" />
+               </>
+             )}
+
+             {/* State 3: PROCESSING (AI thinking - gradient spinner halo) */}
+             {voiceState === "processing" && (
+               <>
+                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-cyan-500/20 via-indigo-500/20 to-purple-600/20 blur-3xl" />
+                 <div className="absolute w-52 h-52 md:w-60 md:h-60 rounded-full border-2 border-transparent border-t-cyan-400 border-r-indigo-500 animate-spin-slow pointer-events-none" />
+                 <div className="absolute w-44 h-44 md:w-52 md:h-52 rounded-full border border-purple-500/30 animate-ping opacity-30 [animation-duration:1.5s]" />
+               </>
+             )}
+
+             {/* State 4: SPEAKING (AI response talking - glowing equalizer ring) */}
+             {voiceState === "speaking" && (
+               <>
+                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-500/25 via-indigo-500/20 to-purple-500/20 blur-3xl animate-pulse" />
+                 <div className="absolute w-52 h-52 md:w-60 md:h-60 rounded-full border-2 border-emerald-500/40 shadow-[0_0_30px_rgba(16,185,129,0.3)] animate-pulse" />
+               </>
+             )}
+
+             {/* Core Button Orb Container */}
+             <div className={`relative w-36 h-36 md:w-44 md:h-44 rounded-full p-[2px] shadow-2xl transition-all duration-500 ${
+               voiceState === "listening" 
+                 ? "bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 shadow-[0_0_50px_rgba(99,102,241,0.5)] scale-105" 
+                 : voiceState === "processing"
+                 ? "bg-gradient-to-br from-cyan-400 via-indigo-500 to-purple-600 shadow-[0_0_50px_rgba(6,182,212,0.4)]"
+                 : voiceState === "speaking"
+                 ? "bg-gradient-to-br from-emerald-400 via-indigo-500 to-purple-500 shadow-[0_0_50px_rgba(16,185,129,0.5)] scale-105"
+                 : "bg-gradient-to-br from-slate-700 via-slate-800 to-indigo-950 shadow-lg"
+             }`}>
+               <div className="w-full h-full rounded-full bg-[#080a10]/90 backdrop-blur-2xl flex flex-col items-center justify-center overflow-hidden relative">
+                 
+                 {/* Visualizer Inside Orb */}
+                 {voiceState === "listening" && (
+                   <div className="flex items-center justify-center gap-1.5 h-10">
+                     <span className="w-1.5 h-5 bg-gradient-to-t from-indigo-500 to-cyan-400 rounded-full animate-bounce [animation-delay:0.1s] [animation-duration:1s]" />
+                     <span className="w-1.5 h-8 bg-gradient-to-t from-purple-500 to-pink-400 rounded-full animate-bounce [animation-delay:0.3s] [animation-duration:0.8s]" />
+                     <span className="w-1.5 h-6 bg-gradient-to-t from-pink-500 to-indigo-400 rounded-full animate-bounce [animation-delay:0.2s] [animation-duration:1.2s]" />
+                     <span className="w-1.5 h-9 bg-gradient-to-t from-cyan-500 to-purple-400 rounded-full animate-bounce [animation-delay:0.4s] [animation-duration:0.9s]" />
+                     <span className="w-1.5 h-5 bg-gradient-to-t from-indigo-500 to-pink-400 rounded-full animate-bounce [animation-delay:0.5s] [animation-duration:1.1s]" />
+                   </div>
+                 )}
+
+                 {voiceState === "processing" && (
+                   <div className="flex flex-col items-center justify-center gap-2">
+                     <Loader2 size={28} className="text-cyan-400 animate-spin" />
+                   </div>
+                 )}
+
+                 {voiceState === "speaking" && (
+                   <div className="flex items-end justify-center gap-1.5 h-10">
+                     <span className="w-1.5 bg-gradient-to-t from-emerald-500 to-indigo-400 rounded-full animate-equalizer-bar-1" />
+                     <span className="w-1.5 bg-gradient-to-t from-emerald-400 to-cyan-300 rounded-full animate-equalizer-bar-2" />
+                     <span className="w-1.5 bg-gradient-to-t from-emerald-500 to-purple-400 rounded-full animate-equalizer-bar-3" />
+                     <span className="w-1.5 bg-gradient-to-t from-emerald-400 to-indigo-300 rounded-full animate-equalizer-bar-4" />
+                     <span className="w-1.5 bg-gradient-to-t from-emerald-500 to-teal-300 rounded-full animate-equalizer-bar-5" />
+                   </div>
+                 )}
+
+                 {(voiceState === "connecting" || voiceState === "idle") && (
+                   <Mic size={32} className="text-indigo-400 animate-pulse" />
+                 )}
                </div>
              </div>
            </div>
 
-           {/* Status text */}
-           <div className="flex flex-col items-center text-center gap-2 max-w-xs">
-             <p className="text-lg font-semibold text-slate-100 tracking-tight">Listening...</p>
+           {/* Dynamic Voice State Label */}
+           <div className="flex flex-col items-center text-center gap-1.5 max-w-xs">
+             <p className="text-lg font-semibold tracking-tight text-slate-100 flex items-center gap-2">
+               {voiceState === "connecting" && "Connecting to Voice..."}
+               {voiceState === "listening" && (
+                 <>
+                   <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
+                   Listening...
+                 </>
+               )}
+               {voiceState === "processing" && (
+                 <>
+                   <Sparkles size={16} className="text-cyan-400 animate-spin" />
+                   NexusAI Thinking...
+                 </>
+               )}
+               {voiceState === "speaking" && (
+                 <>
+                   <Volume2 size={16} className="text-emerald-400 animate-bounce" />
+                   NexusAI Speaking...
+                 </>
+               )}
+               {voiceState === "idle" && "Tap Mic to Speak"}
+             </p>
              <p className="text-xs text-slate-400 leading-relaxed font-normal">
-               Speak in Hindi or English. Tap anywhere to close.
+               {voiceState === "listening" ? "Speak naturally in Hindi or English." : "Tap below to exit voice mode."}
              </p>
            </div>
+
+           {/* Assistant Spoken Response Bubble */}
+           {aiResponseText && (
+             <div className="w-full max-w-md bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-indigo-500/25 text-slate-200 rounded-2xl rounded-tl-sm px-5 py-4 shadow-[0_8px_32px_rgba(99,102,241,0.12)] backdrop-blur-md animate-stream-word transition-all">
+               <div className="flex items-center gap-2 mb-2.5 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
+                 <Sparkles size={14} className="text-indigo-400" />
+                 <span>NexusAI Spoken Response</span>
+               </div>
+               <div className="text-sm md:text-base text-slate-100 leading-relaxed font-normal">
+                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                   {aiResponseText}
+                 </ReactMarkdown>
+               </div>
+             </div>
+           )}
+
          </div>
 
-         {/* Footer */}
+         {/* Footer Control Bar */}
          <div className="w-full max-w-xs flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
            <button 
              onClick={stopVoiceSession}
-             className="px-6 py-2.5 rounded-full bg-white text-[#090a0f] font-semibold text-xs hover:bg-slate-200 active:scale-95 transition-all shadow-md cursor-pointer"
+             className="w-full py-3 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-600 text-white font-semibold text-xs hover:opacity-90 active:scale-95 transition-all shadow-[0_4px_20px_rgba(99,102,241,0.3)] cursor-pointer flex items-center justify-center gap-2"
            >
-             Mute Microphone
+             <MicOff size={16} />
+             Stop & Exit Voice Mode
            </button>
-           <span className="text-[9px] text-slate-600 tracking-wider uppercase font-semibold">Tap anywhere to exit voice mode</span>
+           <span className="text-[10px] text-slate-500 tracking-wider uppercase font-semibold">Tap anywhere or press close to exit</span>
          </div>
        </div>
      )}
-
-       <div className="flex flex-col gap-2.5 bg-white/[0.02] border border-white/[0.05] focus-within:border-indigo-500/30 focus-within:shadow-[0_0_30px_rgba(99,102,241,0.06)] rounded-2xl px-4.5 pt-4 pb-3 transition-all duration-200">
-
-
-    <div className="flex w-[80%] gap-2 pr-2 flex-wrap">
-
-    {agents.map((agent) => {
-
-      const Icon = agent.icon;
-      const isActive = selectedAgent === agent.id;
-
-      return (
-
-        <button
-          key={agent.id}
-          onClick={() => setSelectedAgent(agent.id)}
-          className={`
-            flex-shrink-0
-            
-            inline-flex
-            items-center
-            gap-1.5
-            px-3.5
-            py-2
-            rounded-full
-            text-xs
-            font-semibold
-            border
-            transition-all
-            duration-200
-            cursor-pointer
-
-            ${
-              isActive
-                ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-600 text-white border-transparent shadow-[0_0_15px_rgba(99,102,241,0.25)] scale-[1.02]"
-                : "bg-white/[0.02] text-slate-400 border-white/[0.04] hover:bg-white/[0.05] hover:text-slate-200"
-            }
-          `}
-        >
-
-          <Icon
-            size={14}
-            className={
-              isActive
-                ? "text-white"
-                : "text-slate-500"
-            }
-          />
-
-          {agent.label}
-
-        </button>
-
-      );
-
-    })}
 
 
 </div>
@@ -874,60 +950,35 @@ fileRef.current.click()
               <Paperclip size={14} />
             </button>
            <button
-
-onClick={toggleMic}
-
-className={`
-
-flex
-
-items-center
-
-justify-center
-
-w-8
-
-h-8
-
-rounded-lg
-
-transition-all
-
-cursor-pointer
-
-${
-
-isListening
-
-?
-
-"bg-red-500 text-white"
-
-:
-
-"text-slate-600 hover:bg-white/[0.05]"
-
-}
-
-`}
-
->
-
-{
-
-isListening
-
-?
-
-<MicOff size={14}/>
-
-:
-
-<Mic size={14}/>
-
-}
-
-</button>
+             onClick={toggleMic}
+             title={isListening ? "Stop Voice Session" : "Start Voice Assistant"}
+             className={`
+               relative flex items-center justify-center w-8 h-8 rounded-lg transition-all cursor-pointer duration-200
+               ${
+                 isListening
+                   ? voiceState === "listening"
+                     ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.5)] scale-105"
+                     : voiceState === "processing"
+                     ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40"
+                     : voiceState === "speaking"
+                     ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+                     : "bg-red-500 text-white"
+                   : "text-slate-400 hover:text-white hover:bg-white/[0.08] border border-transparent hover:border-white/[0.06] animate-mic-idle-glow"
+               }
+             `}
+           >
+             {isListening ? (
+               voiceState === "processing" ? (
+                 <Loader2 size={14} className="animate-spin text-cyan-400" />
+               ) : voiceState === "speaking" ? (
+                 <Volume2 size={14} className="animate-bounce text-emerald-400" />
+               ) : (
+                 <MicOff size={14} />
+               )
+             ) : (
+               <Mic size={14} />
+             )}
+           </button>
           </div>
 
           {/* Right — send / stop */}

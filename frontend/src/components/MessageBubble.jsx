@@ -32,8 +32,8 @@ const markdown = (content || "")
   leading-relaxed transition-all duration-200
         ${
           isUser
-            ? "bg-gradient-to-br from-indigo-500 to-violet-700 text-white rounded-2xl rounded-tr-sm px-4.5 py-3 shadow-[0_4px_12px_rgba(99,102,241,0.15)]"
-            : "bg-gradient-to-br from-white/[0.03] to-white/[0.01] hover:from-white/[0.04] hover:to-white/[0.02] border border-white/[0.05] hover:border-indigo-500/25 text-slate-200 rounded-2xl rounded-tl-sm px-5 py-4.5 shadow-[0_8px_32px_rgba(0,0,0,0.22),_inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-[0_8px_32px_rgba(99,102,241,0.04)] backdrop-blur-xs"
+            ? "bg-gradient-to-br from-indigo-500 via-purple-600 to-violet-700 text-white rounded-2xl rounded-tr-xs px-5 py-3.5 shadow-[0_4px_25px_rgba(99,102,241,0.3)] border border-indigo-400/20 font-medium"
+            : "bg-gradient-to-br from-white/[0.04] via-white/[0.02] to-transparent border border-indigo-500/20 hover:border-indigo-500/35 text-slate-100 rounded-2xl rounded-tl-xs px-5.5 py-5 shadow-[0_10px_35px_rgba(0,0,0,0.3),_inset_0_1px_1px_rgba(255,255,255,0.08)] backdrop-blur-md transition-all duration-300"
         }`}
       >
         {images.length > 0 && (
@@ -53,33 +53,41 @@ const markdown = (content || "")
   remarkPlugins={[remarkGfm]}
   components={{
     h1: ({ children }) => (
-      <h1 className="text-2xl font-bold mt-5 mb-3">{children}</h1>
+      <h1 className="text-2xl font-extrabold text-indigo-200 mt-6 mb-3 tracking-tight border-b border-white/10 pb-1.5">{children}</h1>
     ),
 
     h2: ({ children }) => (
-      <h2 className="text-xl font-semibold mt-4 mb-2">{children}</h2>
+      <h2 className="text-xl font-bold text-slate-100 mt-5 mb-2.5 tracking-tight border-b border-white/5 pb-1">{children}</h2>
     ),
 
     h3: ({ children }) => (
-      <h3 className="text-lg font-semibold mt-3 mb-2">{children}</h3>
+      <h3 className="text-lg font-semibold text-slate-200 mt-4 mb-2">{children}</h3>
     ),
 
     p: ({ children }) => (
-      <p className="mb-3 whitespace-pre-wrap break-words">
+      <p className="mb-3.5 leading-relaxed text-slate-200 text-sm md:text-base whitespace-pre-wrap break-words">
         {children}
       </p>
     ),
 
     ul: ({ children }) => (
-      <ul className="list-disc pl-5 space-y-1 my-2">
+      <ul className="list-disc pl-6 space-y-2 my-3 text-slate-200 leading-relaxed">
         {children}
       </ul>
     ),
 
     ol: ({ children }) => (
-      <ol className="list-decimal pl-5 space-y-1 my-2">
+      <ol className="list-decimal pl-6 space-y-2 my-3 text-slate-200 leading-relaxed">
         {children}
       </ol>
+    ),
+
+    li: ({ children }) => (
+      <li className="pl-1 text-slate-200 leading-relaxed">{children}</li>
+    ),
+
+    strong: ({ children }) => (
+      <strong className="font-bold text-white">{children}</strong>
     ),
 
     table: ({ children }) => (

@@ -62,3 +62,144 @@ body {
   border: 1px solid rgba(99, 102, 241, 0.25);
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.08);
 }
+
+/* Background Mesh Pattern */
+.bg-grid-pattern {
+  background-image: radial-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Glow Cards & Neon Badges */
+.neon-border-glow {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), inset 0 0 15px rgba(99, 102, 241, 0.05);
+}
+
+.neon-border-hover:hover {
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.3), inset 0 0 20px rgba(99, 102, 241, 0.1);
+  border-color: rgba(129, 140, 248, 0.4);
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+
+/* Voice UI Custom Animations */
+@keyframes voiceRipple {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+
+@keyframes equalizerBounce {
+  0%, 100% {
+    height: 6px;
+  }
+  50% {
+    height: 28px;
+  }
+}
+
+@keyframes transcriptFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes micIdleSoftPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(99, 102, 241, 0.45);
+    transform: scale(1.03);
+  }
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-voice-ripple-1 {
+  animation: voiceRipple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+.animate-voice-ripple-2 {
+  animation: voiceRipple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite 0.6s;
+}
+
+.animate-voice-ripple-3 {
+  animation: voiceRipple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite 1.2s;
+}
+
+.animate-equalizer-bar-1 {
+  animation: equalizerBounce 0.8s ease-in-out infinite 0.1s;
+}
+.animate-equalizer-bar-2 {
+  animation: equalizerBounce 0.7s ease-in-out infinite 0.25s;
+}
+.animate-equalizer-bar-3 {
+  animation: equalizerBounce 0.9s ease-in-out infinite 0.15s;
+}
+.animate-equalizer-bar-4 {
+  animation: equalizerBounce 0.65s ease-in-out infinite 0.35s;
+}
+.animate-equalizer-bar-5 {
+  animation: equalizerBounce 0.85s ease-in-out infinite 0.2s;
+}
+
+.animate-transcript-fade {
+  animation: transcriptFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-mic-idle-glow {
+  animation: micIdleSoftPulse 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spinSlow 3s linear infinite;
+}
+
+/* Streaming / Typewriter Word Fade */
+@keyframes streamWordFade {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-stream-word {
+  animation: streamWordFade 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

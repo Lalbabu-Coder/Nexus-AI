@@ -132,44 +132,56 @@ if (latestArtifactMessage) {
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {messages.length === 0 && !isLoading ? (
-        <div className="h-full flex flex-col items-center justify-center gap-7 text-center max-w-[540px] mx-auto select-none py-10 relative">
+        <div className="h-full flex flex-col items-center justify-center gap-6 text-center max-w-[620px] mx-auto select-none py-8 relative">
           
-          {/* Glowing central core visual */}
-          <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
-            {/* Outer animated rotating border ring */}
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 opacity-30 blur-md animate-pulse-glow" />
-            <div className="absolute inset-0.5 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 opacity-70 animate-spin" style={{ animationDuration: '15s' }} />
+          {/* Ambient Background Aura Lights */}
+          <div className="absolute w-72 h-72 rounded-full bg-gradient-to-tr from-indigo-500/20 via-purple-500/15 to-pink-500/10 blur-3xl pointer-events-none animate-pulse-glow" />
+
+          {/* Holographic Glowing Central Core Visual */}
+          <div className="relative w-24 h-24 flex items-center justify-center shrink-0 my-1 animate-float-slow">
+            {/* Outer Concentric Animated Rings */}
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 opacity-25 blur-lg animate-pulse-glow" />
+            <div className="absolute inset-0.5 rounded-3xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 opacity-70 animate-spin pointer-events-none" style={{ animationDuration: '12s' }} />
+            <div className="absolute -inset-2 rounded-full border border-indigo-500/20 animate-ping opacity-30 pointer-events-none [animation-duration:3s]" />
             
-            {/* Inner solid glass card */}
-            <div className="absolute inset-[3px] rounded-[13px] bg-[#0c0e14]/90 border border-white/[0.08] flex items-center justify-center z-10 backdrop-blur-sm shadow-[inset_0_0_12px_rgba(255,255,255,0.05)]">
-              <span className="text-[28px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-200">N</span>
+            {/* Core Solid Glass Sphere Card */}
+            <div className="absolute inset-[3px] rounded-[20px] bg-[#07090f]/95 border border-white/10 flex items-center justify-center z-10 backdrop-blur-xl shadow-[0_0_35px_rgba(99,102,241,0.25),_inset_0_1px_1px_rgba(255,255,255,0.1)]">
+              <span className="text-[34px] font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-200 to-cyan-300">N</span>
             </div>
           </div>
           
-          <div className="flex flex-col gap-2 z-10">
-            <h1 className="text-[40px] font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-purple-200">
-              Nexus<span className="text-indigo-400">AI</span>
+          {/* Title & Tagline */}
+          <div className="flex flex-col items-center gap-2.5 z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 backdrop-blur-md mb-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="text-[11px] font-semibold text-indigo-300 uppercase tracking-widest">Autonomous Intelligence 3.0</span>
+            </div>
+
+            <h1 className="text-[42px] md:text-[48px] font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-indigo-200 leading-none">
+              Nexus<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">AI</span>
             </h1>
-            <h3 className="text-[17px] font-bold text-slate-300">How can I assist you today?</h3>
-            <p className="text-[13.5px] text-slate-500 max-w-[340px] mx-auto leading-relaxed">
-              Unlock the power of advanced multimodal AI agents for search, code, docs, and presentations.
+            <h3 className="text-[18px] md:text-[20px] font-semibold text-slate-200 tracking-tight">How can I assist you today?</h3>
+            <p className="text-[13.5px] text-slate-400 max-w-[420px] mx-auto leading-relaxed font-normal">
+              Empowering next-gen autonomous agent workflows for code, search, synthesis, and voice interaction.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mt-4 z-10">
+          {/* Interactive Suggestion Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 w-full mt-3 z-10">
             {[
-              { title: "Write a Netflix clone", desc: "Build code project", accent: "from-blue-500 to-indigo-500" },
-              { title: "Explain Redis", desc: "Understand concepts", accent: "from-purple-500 to-pink-500" },
-              { title: "Build a dashboard", desc: "Design interfaces", accent: "from-teal-500 to-emerald-500" }
+              { title: "Write a Netflix Clone", desc: "Full-stack code architecture", accent: "from-indigo-500 to-cyan-400" },
+              { title: "Explain Redis Caching", desc: "Deep concept breakdown", accent: "from-purple-500 to-pink-400" },
+              { title: "Design AI Dashboard", desc: "Modern UI components", accent: "from-cyan-400 to-emerald-400" }
             ].map((item) => (
-              <button
+              <div
                 key={item.title}
-                className="flex flex-col items-start text-left p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] hover:border-indigo-500/30 hover:bg-white/[0.03] hover:shadow-[0_0_25px_rgba(99,102,241,0.08)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
+                className="flex flex-col items-start text-left p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-indigo-500/40 hover:bg-white/[0.04] shadow-[0_4px_20px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.15)] hover:-translate-y-1 transition-all duration-300 cursor-pointer group relative overflow-hidden"
               >
-                <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${item.accent} mb-3`} />
-                <span className="text-[12.5px] font-semibold text-slate-200 group-hover:text-indigo-300 transition-colors duration-150">{item.title}</span>
-                <span className="text-[10.5px] text-slate-500 mt-1">{item.desc}</span>
-              </button>
+                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-bl-full pointer-events-none group-hover:scale-125 transition-transform duration-300" />
+                <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${item.accent} mb-3 shadow-[0_0_8px_rgba(99,102,241,0.5)]`} />
+                <span className="text-[13px] font-bold text-slate-200 group-hover:text-indigo-300 transition-colors duration-150 tracking-tight">{item.title}</span>
+                <span className="text-[11px] text-slate-500 mt-1 font-medium">{item.desc}</span>
+              </div>
             ))}
           </div>
         </div>
