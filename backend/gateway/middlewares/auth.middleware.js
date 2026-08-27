@@ -11,11 +11,12 @@ async(req,res,next)=>{
 
  try{
 
-   const sessionId =
-   req?.cookies?.session;
+   const authHeader = req.headers.authorization;
+   const bearerToken = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+   const sessionId = req?.cookies?.session || bearerToken || req.headers["x-session-id"];
   
    if(!sessionId){
-     console.error("401 Unauthorized: No session ID found in cookies. req.cookies.session is undefined.");
+     console.error("401 Unauthorized: No session ID found in cookies or Authorization header.");
      return res.status(401).json({
        message:"Unauthorized"
      });

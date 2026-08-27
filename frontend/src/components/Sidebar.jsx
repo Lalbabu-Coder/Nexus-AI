@@ -21,6 +21,7 @@ const [showBilling, setShowBilling] =useState(false);
   const logout = async () => {
     try {
       await api.get("/api/auth/logout");
+      localStorage.removeItem("sessionId");
       dispatch(setUserData(null));
     } catch (error) {
       console.log(error);

@@ -126,10 +126,9 @@ export const login = async (
 
     console.log("11. Before res.json()");
     return res.json({
-
       success: true,
-
       user,
+      sessionId,
     });
 
   } catch (error) {
