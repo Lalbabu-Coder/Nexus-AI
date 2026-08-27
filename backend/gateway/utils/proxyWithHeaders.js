@@ -13,6 +13,14 @@ export const proxyWithUser = (serviceUrl) => {
         return resolvedPath;
       },
 
+      userResHeaderDecorator: (headers) => {
+        delete headers["access-control-allow-origin"];
+        delete headers["access-control-allow-credentials"];
+        delete headers["access-control-allow-methods"];
+        delete headers["access-control-allow-headers"];
+        return headers;
+      },
+
       proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
         if (srcReq.user) {
           proxyReqOpts.headers["x-user-id"] = srcReq.user.userId || srcReq.user._id || srcReq.user;
