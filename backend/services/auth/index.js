@@ -1,11 +1,17 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import connectDB from "./config/db.js";
 import dotenv from "dotenv";
 import router from "./routes/auth.routes.js";
 dotenv.config();
 const app = express();
 app.set("trust proxy", 1);
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  })
+);
 app.use(express.json());
 const port=process.env.PORT 
 
