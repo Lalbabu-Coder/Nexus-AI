@@ -7,6 +7,25 @@ import router from "./routes/auth.routes.js";
 dotenv.config();
 const app = express();
 app.set("trust proxy", 1);
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "https://nexus-ai-tau-black.vercel.app",
+  "http://localhost:5173"
+].filter(Boolean).map((url) => (url.endsWith("/") ? url.slice(0, -1) : url));
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cookie", "x-user-id"]
+}));
+
 app.use(
   helmet({
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },

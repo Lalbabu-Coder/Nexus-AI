@@ -108,20 +108,13 @@ export const login = async (
 
     console.log("10. Before res.cookie()");
     res.cookie(
-
       "session",
-
       sessionId,
-
       {
         httpOnly: true,
-
-        secure: isProduction,
-
-        sameSite: isProduction ? "none" : "lax",
-
+        secure: true,
+        sameSite: "none",
         path: "/",
-
         maxAge:
           1000 *
           60 *
@@ -178,17 +171,12 @@ export const logout =
 
       }
 
-      const isProduction =
-        req.secure ||
-        req.headers["x-forwarded-proto"] === "https" ||
-        process.env.RENDER === "true";
-
       res.clearCookie(
         "session",
         {
           httpOnly: true,
-          secure: isProduction,
-          sameSite: isProduction ? "none" : "lax",
+          secure: true,
+          sameSite: "none",
           path: "/"
         }
       );
