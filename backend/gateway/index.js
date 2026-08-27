@@ -34,8 +34,7 @@ app.use(cors({
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "x-user-id"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
 }));
 app.use(
   "/uploads",
@@ -44,6 +43,7 @@ app.use(
 app.use(
   helmet({
     crossOriginOpenerPolicy: { policy: "unsafe-none" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 app.use(morgan("dev"));
@@ -57,6 +57,7 @@ app.use(
       delete headers["access-control-allow-credentials"];
       delete headers["access-control-allow-methods"];
       delete headers["access-control-allow-headers"];
+      delete headers["cross-origin-resource-policy"];
       return headers;
     },
   })

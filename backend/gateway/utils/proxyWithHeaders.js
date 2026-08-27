@@ -18,6 +18,7 @@ export const proxyWithUser = (serviceUrl) => {
         delete headers["access-control-allow-credentials"];
         delete headers["access-control-allow-methods"];
         delete headers["access-control-allow-headers"];
+        delete headers["cross-origin-resource-policy"];
         return headers;
       },
 

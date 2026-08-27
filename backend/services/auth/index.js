@@ -29,6 +29,7 @@ app.use(cors({
 app.use(
   helmet({
     crossOriginOpenerPolicy: { policy: "unsafe-none" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 app.use(express.json());
