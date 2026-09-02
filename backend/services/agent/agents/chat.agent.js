@@ -125,20 +125,14 @@ Formatting:
 
  );
 
- const response = await llm.invoke(messages);
+  const response = await llm.invoke(messages);
 
+  const images = state.searchResults?.images || [];
 
-
-const images = state.searchResults?.images || [];
-
-
-
-return {
-  ...state,
-
-  response:response.content,
-  images:images
-  
-};
+  return {
+    ...state,
+    response: response.content || "",
+    images: images
+  };
 
 };

@@ -15,12 +15,11 @@ app.use("/", router);
 
 app.use((err, req, res, next) => {
   console.error("[Agent Service Unhandled Error]", err);
-  if (err.status) {
-    return res.status(err.status).json(err.data);
-  }
-  return res.status(500).json({
+  const status = err.status || err.statusCode || 500;
+  return res.status(status).json({
     success: false,
-    message: err.message || "Internal Server Error"
+    message: err.message || "Internal Server Error",
+    error: err.data || err.error || undefined
   });
 });
 

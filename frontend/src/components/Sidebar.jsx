@@ -29,6 +29,7 @@ const [showBilling, setShowBilling] =useState(false);
   };
 
   useEffect(() => {
+    if (!userData?._id) return;
     const fetchConversations = async () => {
       try {
         const data = await getConversations();

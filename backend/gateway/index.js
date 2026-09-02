@@ -34,7 +34,8 @@ app.use(cors({
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "x-user-id", "x-session-id"]
 }));
 app.use(
   "/uploads",
@@ -52,11 +53,12 @@ app.use(express.json());
 app.use(
   "/api/auth",
   proxy(process.env.AUTH_SERVICE, {
-    userResHeaderDecorator: (headers) => {
-      delete headers["access-control-allow-origin"];
-      delete headers["access-control-allow-credentials"];
-      delete headers["access-control-allow-methods"];
-      delete headers["access-control-allow-headers"];
+    userResHeaderDecorator: (headers, userReq) => {
+      const origin = userReq.headers.origin || "http://localhost:5173";
+      headers["access-control-allow-origin"] = origin;
+      headers["access-control-allow-credentials"] = "true";
+      headers["access-control-allow-methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH";
+      headers["access-control-allow-headers"] = "Content-Type, Authorization, Cookie, x-user-id, x-session-id";
       delete headers["cross-origin-resource-policy"];
       return headers;
     },
